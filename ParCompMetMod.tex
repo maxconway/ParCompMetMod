@@ -1,0 +1,207 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{graphicx}
+\usepackage{siunitx}
+\usepackage[version=3]{mhchem}
+\usepackage{hyperref}
+\usepackage{subcaption}
+
+%development
+\usepackage{todonotes}
+%\setlength{\marginparwidth}{2cm}
+
+
+\graphicspath{ {./figures/} }
+%http://www.biomedcentral.com/authors/report
+
+\begin{document}
+\title{Local and Global Comparative Analysis of Metabolic Networks}
+%\author{Conway, M. \and Lio, P. \and Aklujkar, M.}
+\date{}
+\maketitle
+\begin{abstract}
+{\footnotesize
+\begin{description}
+\item[]
+\item[Introduction] 
+We present a novel methodology combining Multi-objective Optimization based global analysis of properties of metabolic networks with local properties. A tool implementing this methodology is presented, and then demonstrated by comparing two species of Geobacter. Multi-objective Optimization has not previously been used in this sort of comparison between models, and it reveals differences that would not be obvious using other techniques.
+
+\item[Background]
+Genetic Design by Multi-Objective Optimization is a global approach, which produces a set of Pareto optimal genomes. This Pareto front can highlight interesting properties of the genetic landscape around a given species; in addition, we compare Pareto fronts from different species. To facilitate investigation of the local basis for global  differences between Pareto fronts, we have created a tool to visualize portions of the Pareto front in Cytoscape.
+
+This system is demonstrated on two species in the genus {\it Geobacter}: {\it Sulfurreducens} and {\it Metallireducens}. These bacteria are able to oxidize organic compounds by using metallic ions, or even electrodes, as the electron acceptor, and so have huge industrial potential. Here we optimize for increased electricity production in the context of use in a microbial fuel cell.
+
+\item[Results]
+Comparing metabolic Pareto fronts is effective in identifying differences between strains, but the root causes of these differences are difficult to interpret directly. However, the tool described successfully identifies important reactions and their controlling genes, and shows these reactions in the Cytoscape network visualization package, to aid understanding of why the reactions produce the effects that they do.
+
+We find 2000 knockout vectors that are capable of enhancing electricity production in each bacteria by up to \SI{4}{\percent}. These knockout vectors are analysed to identify a number of genes with disproportionately large impacts on synthesis capability---{\it Gmet\_3497} has a particularly large effect. We compare the Pareto fronts of {\it G. Sulfurreducens} and {\it G. Metallireducens} showing that {\it Sulfurreducens} offers a higher upper limit on electricity production, but that for lower production situations, {\it Metallireducens} is superior.
+\end{description}
+}
+\end{abstract}
+\pagebreak
+
+\section{Background}
+% The Background section should be written in a way that is accessible to researchers without specialist knowledge in that area and must clearly state --- and, if helpful, illustrate --- the background to the research and its aims. The section should end with a brief statement of what is being reported in the article.
+
+Genetic design is the process of choosing how to modify an organism in order to make it more useful. Much like in traditional engineering disciplines, small modifications are possible purely by human knowledge and understanding, but for more complex modifications, computer aide will become increasingly necessary.
+
+Metabolic engineering~\cite{stephanopoulos1999metabolic} is one of the most industrially important areas of genetic design. It is commonly achieved by the combination of a heuristic search algorithm, to generate draft genomes; and Flux Balance Analysis, to evaluate them \cite{Orth2010}. One of the bottlenecks in this procedure can be that feedback for human interpretation is not necessarily clear. Here we discuss the use of one heuristic search, Genetic Design by Multi-objective Optimization~\cite{Costanza2012}, and the development of a framework to allow efficient visual interpretation of its results.
+
+Genetic Design by Multi-objective Optimization is based on the generic multi-objective optimization algorithm NSGA-II (Non-domination Sort Genetic Algorithm II)~\cite{Deb2002a}. As a multi-objective optimization  algorithm~\cite{Gen2008}, it finds a Pareto front, which is a set of possible genomes whose phenotypes are Pareto optimal---phenotypes for which there is no other phenotype which is superior in all ways. Using NSGA-II as the core allows for the efficient creation of a front that represents a wide variety of different phenotypes. This is important since the later analysis is focussed on relating properties of the phenotypes back to the genomes.
+
+This framework is used to compare how electricity generation could be enhanced in {\it Geobacter} {\it Sulfurreducens} and {\it Metallireducens}.
+
+{\it Geobacter}~\cite{Lovley2011} is a genus of anaerobic proteobacteria with a number of possible industrial applications, stemming from their ability to utilize insoluble materials as electron acceptors, via conductive surface pilli~\cite{Bond2003}. This ability makes Geobacter interesting as a candidate for use in bacterial fuel cells, and the pilli used to transport electrons have potential applications in themselves, as nanowires.
+
+This paper presents three related outcomes:
+\begin{itemize}
+	\item The methodology of combining whole metabolome optimization, via Pareto front analysis, with local insights through visual examination of the network structure.
+	\item A case study of applying this method to comparing and contrasting two species of Geobacter, showing how this method can help identify systemic properties of individual reactions.
+	\item The tool used to accomplish this, based around the genetic design technique GDMO, and the Cytoscape network visualization package.
+\end{itemize}
+
+We first discuss the methodology of combining local and global views on a metabolic Pareto front, and the instantiation of this methodology to a tool, and secondly describe the case study of comparing {\it Geobacter} {\it Sulfurreducens} and {\it Metallireducens}.
+
+\section{Methodology and tool}
+The framework created can be broken down into three components: 
+\begin{itemize}
+\item Genetic Design by Multi-objective Optimization, which was used to create the Pareto fronts,
+\item Correlation, Clustering and Analysis, to identify the most important reactions from the Pareto fronts, and
+\item Network Visualization, using Cytoscape to see the parts of the metabolic network that were identified as being associated with particular features 
+\end{itemize}
+
+Figure~\ref{fig:flowdiagram} presents an overview of the design framework created. This framework is not only a conceptual description of the steps taken, but is an automated software pipeline, meaning that all steps taken are fully documented and replicable, and can be reused on other metabolic models with minimal configuration changes. 
+
+\begin{figure}[!htb]
+\includegraphics[width=\textwidth]{GeobacterFlowChart}
+\caption{Overview flow chart of analysis process. Green parallelograms show data used and generated. Red rectangles show processes conducted.}
+\label{fig:flowdiagram}
+\end{figure}
+
+\subsection{Genetic Design by Multi-objective Optimization}
+This process was much as described in~\cite{Costanza2012}, and used the same source code as a base. However, the code was altered to include the additional objectives of increasing both upper and lower bounds on synthesis, and of minimizing the total number of knockouts. Looking at both upper and lower bounds allows us to see, loosely, which knockouts are active in increasing the resources available for synthesis, and which act by restricting those resources to the goals we intend. Minimizing total knockouts was found to be beneficial when we looked at genes on an individual basis, since this reduced the background level of knockouts of genes with little effect on synthesis.
+
+GDMO was chosen for the optimization step since the evolutionary basis of this algorithm gives it good robustness. It was compared to Genetic Design by Local Search~\cite{Lun2009}, and found to be somewhat slower for simple cases, however it was able to find many solutions which GDLS could not and was able to provide a wider range of solutions. The GDMO source code was modified from the original so that it maximized both upper and lower bounds on synthesis rate, as well as minimizing unnecessary knockouts.
+
+\subsection{Correlation, Clustering and Analysis}
+Pareto front analysis, via GDMO, can reveal trade-offs implicit in the genotype of a species which would not be obvious from examination of any one set of knockouts, but only when many different knockouts are viewed together. For instance, {\it G. Metallireducens} was found to display a sharp cut-off beyond which it is difficult to increase the upper bound on synthesis rate.
+
+However, understanding the low-level causes of the shape of the Pareto front is not necessarily simple. The first step was to use an unsupervised learning approach to identify reactions that were likely to be strongly associated with certain properties. Several techniques were tested in the case study, such as such as building a decision tree to help identify interacting sets of reactions, and the heat maps shown in figure \ref{fig:heatmap}. The best analysis in a given case depends on the shape of the Pareto front, and the exact information desired. 
+
+A fairly simple correlation based procedure was possible and effective in the {\it Geobacter} case study: we established a measure of phenotypic similarity to the wild type, and and looked at the correlation between this measure and gene activation; genes where this correlation laid outside normal genetic drift were identified as selected for, or against. Figure~\ref{fig:outlyinggenes} shows a graphical representation of this procedure. 
+
+Establishing a single measure of phenotypic similarity to the wild type would not typically be possible in Pareto fronts with more than two dimensions, but in the case study the highly linear nature of the fronts meant that it was reasonable to use dimensional reduction.
+
+\subsection{Network Visualization}
+Even once important reactions have been identified, understanding what these reactions mean is not easy from just their equations---we need to be able to see how they fit into the whole metabolic network. For instance, if all of the reactions identified as important are involved in the same pathway, we might posit that disrupting this pathway directs resources towards our objective; if they are in separate pathways, this might be because they have similar products, or products that are used together. Finally, scattered and unconnected reactions could show a poor choice of significance threshold, either too strict or too lenient.
+
+Interactive network visualization was therefore the next component needed to find the underlying meaning of the shape of the Pareto front. 
+The Cytoscape network visualization package was used as a base for the network viewing facility in this framework, since it is freely available for all major platforms and it has a number of useful plugins. Cytoscape was connected to R via the the RCytoscape R package, XML-RPC, and the Cytoscape plugin CytoscapeRPC.
+
+By using this connection, virtually every property of the network shown in Cytoscape could be set from R. The most important method was to set node and edge appearance to be a function of the attributes of the node or edge, and then assign those attributes to the results of analyses conducted in R. This allowed the implications of results to be visualized in real time. Temporal variation of the network was also used to add an extra dimension to the information that could be shown.
+
+Figure~\ref{fig:cytoscape-screenshot} shows an example of this connection in use. A number of gene sets were identified as having outlying correlation with electricity production, and figure~\ref{fig:cytoscape-screenshot} highlights the reactions associated with these genes. 
+
+\begin{figure}[!htb]
+\makebox[\textwidth][c]{
+\includegraphics[width=0.9\paperwidth]{cytoscape-diagram}
+}
+\caption{Screenshots from the Cytoscape visualization of the {\it Geobacter Sulfurreducens} metabolic network. 
+Diamonds are reactions, circles metabolites. 
+The whole network `hairball' visualization demonstrates the difficulty of manual comprehension. 
+The detail has been automatically produced via the outlier detection technique described (presence of the reactions in it show unusually high correlations with electricity production), and clearly highlights a coherent fragment of the whole network.}
+\label{fig:cytoscape-screenshot}
+\end{figure}
+
+\section{Geobacter Case Study}
+This section discusses in more detail the application of the framework to comparing metabolic models of two species of {\it Geobacter}. Both metabolic models were constructed with import and export constraints such that their growth was limited by the availability of Acetate as an energy source. The models for {\it G. Sulfurreducens} and {\it G. Metallireducens} are described in \cite{Mahadevan2006} and \cite{Sun2009}, respectively.
+
+Genetic Design by Multiobjective Optimization was able to increase the upper bound of \ce{FE3} reduction ability in {\it Geobacter Sulfurreducens} by a maximum of \SI{4}{\percent}, and was also able to produce an increase in lower bound capacity of  \SI{0.6}{\percent}, while keeping biomass production at  \SI{88}{\percent} of the wildtype value. 
+{\it Geobacter Metallireducens} was able to have a much more tightly bounded output, with upper and lower bounds increased by a maximum of \SI{2.5}{\percent} of the wildtype value, with a biomass production of \SI{74}{\percent}.
+
+These increases are especially promising given that, unlike many common synthetic objectives, this electricity production is part of the core metabolic pathway being used, rather than just a byproduct. 
+
+The optimization objectives used were:
+\begin{description}
+	\item[Maximizing biomass production ---] the engineered bacteria should be as healthy as possible,
+	\item[Minimizing knockouts ---] this selects for easier to engineer genomes, and suppresses superfluous knockouts,
+	\item[Maximizing Electricity Production ---] Flux Balance Analysis gives a range of possible values for the production of a genotype, so this involved maximizing two values:
+	\begin{itemize}
+		\item Lower bound on electricity production
+		\item Upper bound on electricity production
+	\end{itemize}
+\end{description}
+
+GDMO allowed the creation of 2000 other Pareto optimal genomes for each {\it Geobacter} species. These genomes showed a relatively linear Pareto front, which indicates that genomes could plausibly be designed to fit individual circumstances, such as high efficiency in large-scale wastewater electricity production, or for better environmental tolerances in smaller applications.
+
+\begin{figure}[!htb]
+\makebox[\textwidth][c]{
+	\begin{subfigure}[t]{0.7\textwidth}
+                \includegraphics[width=\textwidth]{pfront_max}
+                \caption{Upper bound on electricity production against biomass production}
+                \label{fig:pfronts:upper}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.7\textwidth}
+                \includegraphics[width=\textwidth]{pfront_min}
+                \caption{Lower bound on electricity production against biomass production. The black line in the {\it G. Metallireducens} front separates strains with {\it Gmet\_3497} present (right) or absent (left)}
+                \label{fig:pfronts:lower}
+	\end{subfigure}
+}
+	\caption{4D Pareto fronts projected down to two dimensions. X-axis shows biomass production, divided by the wild type value. Y-axes show the upper (\ref{fig:pfronts:upper}) and lower (\ref{fig:pfronts:lower}) limits on electricity production, divided by their respective wild type values. \label{fig:pfronts}}
+\end{figure}
+
+Figure~\ref{fig:pfronts} shows a projection of the Pareto fronts for the two {\it Geobacter} species investigated. We can see that in the trade-off between upper synthesis limit and biomass production, {\it Sulfurreducens} may be capable of a higher total production, but that for higher biomass applications, {\it Metallireducens }offers a superior trade-off, and far less variability over most of the front. It must, however, be noted that this comparison is based on values for electricity generation and biomass production normalized against the wildtype. Non-normalized, {\it G. Metallireducens} produced significantly more electricity and less biomass, but since the metabolic models used are not complete, they are more valid for comparison than for raw production.
+
+Figure~\ref{fig:pfronts} also reveals a very clear knee point in the {\it G. Metallireducens} Pareto front for the lower limit on synthesis. A knee point is a sharp change in the direction of the Pareto front, which can be indicative of a qualitative difference in the properties of the networks on either side. Closer examination revealed that the distinguishing difference was the knockout of the gene {\it Gmet\_3497}, which is associated with calcium transport via the ABC system. With {\it Gmet\_3497} present, the bounds on synthesis were very close, but once {\it Gmet\_3497} was knocked out, the lower bound was much lower, though the upper bound could be increased slightly.
+
+\begin{figure}[!htb]
+\makebox[\textwidth][c]{
+	\begin{subfigure}[t]{0.7\textwidth}
+		\includegraphics[width=\textwidth]{heatmap_geo_s_react_lessknockouts}
+		\caption{Heatmap of Geobacter Sulfurreducens}
+		\label{fig:heatmap:sul}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.7\textwidth}
+		\includegraphics[width=\textwidth]{heatmap_geo_m_react_lessknockouts}
+		\caption{Heatmap of Geobacter Metallireducens}
+		\label{fig:heatmap:met}
+	\end{subfigure}
+}
+\caption{Colour indicates knocked out. Essential genes---those with no colour, are obviously together, while non-essential genes have varying amounts of colour, according to how often they were knocked out. X-axis is genes, hierarchically clustered by Manhattan distance. Y-axis is strain, ordered by the phenotypic distance to wild type, wild type at the bottom. \label{fig:heatmap}} 
+\end{figure}
+
+The large number of Pareto optimal genomes is obviously of interest in attempting to form a more complete understanding of the implications of the metabolic network structure of the {\it Geobacter} species studied, and therefore in attempting to perform more targeted genetic design. Figure~\ref{fig:heatmap} shows these genomes heatmapped. Two features of genes were extracted: firstly, the correlation between the gene’s presence and a projection of the normalized values of the synthetic objectives down to one dimension, and secondly correlations between the activation of genes. 
+
+\begin{figure}[!htb]
+	\begin{subfigure}[htb]{\textwidth}
+                \includegraphics[width=\textwidth]{interestingByPos_geo_s_react_lessknockouts}
+                \caption{\it Geobacter Sulfurreducens}
+                \label{fig:outlyinggenes:sul}
+	\end{subfigure}
+	\begin{subfigure}[htb]{\textwidth}
+                \includegraphics[width=\textwidth]{interestingByPos_geo_m_react_lessknockouts}
+                \caption{\it Geobacter Metallireducens}
+                \label{fig:outlyinggenes:met}
+	\end{subfigure}
+	\caption{Finding outlying genes by their correlation with Pareto front position. The kernel density plots illustrate that activation of most gene sets is due to genetic drift, and hence normally distributed. Genes outlying this normal distribution are selected for further investigation.}
+	\label{fig:outlyinggenes}
+\end{figure}
+
+Figure~\ref{fig:outlyinggenes} shows how correlation between the presence of genes (or in some cases, sets of genes), and the position of the phenotype in the Pareto front, was used to select unusual genes. The kernel density plot at the top shows the correlations: most are in a central normal hump, which represents variance in gene activation due to genetic drift, but the outliers are selected (\( \rho > 2\sigma \) ), as shown in the bottom section. 
+{\it Geobacter} {\it Sulfurreducens} and {\it Metallireducens} show 9 and 8 outlying genes respectively; this difference is not likely to be significant, given the presence of some borderline cases.
+The outliers for {\it G. Sulfurreducens} are shown in the network in figure~\ref{fig:cytoscape-screenshot}. In both species, these knockouts were involved in acetate metabolism. We hypothesize that these knockouts are forcing acetate to be metabolized less efficiently, and so require more electrons for the same amount of energy production.
+
+\section{Conclusions}
+% This should state clearly the main conclusions of the research and give a clear explanation of their importance and relevance. Summary illustrations may be included.
+
+Genetic engineering is a challenging field to create CAD tools for, since a lack of complete information makes human interpretation very important, but, simultaneously, this interpretation is difficult due to the complexity and connectivity of the systems under study. 
+
+The combination of genetic design by multi-objective optimization and network visualization discussed here allows for high throughput design and interpretation. This has allowed us to identify knockout vectors to increase electricity production in {\it G. Sulfurreducens} and {\it G. Metallireducens}, as well as discovering systematic effects of individual knockouts.
+
+\nocite{R-base,R-ggplot2,R-RCytoscape}
+
+\bibliographystyle{plain}
+\bibliography{geobacter,packages}
+
+\end{document}
+
+

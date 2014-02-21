@@ -59,12 +59,12 @@ l_ply(.data = strains,
 			.progress = 'text',
 			.fun = function(x){
 				
-				png(paste0('../figures_paper/heatmap_',x$model@mod_name,'.png'))
+				png(paste0('./figures/heatmap_',x$model@mod_desc,'.png'))
 				heatmapify(x$dataset)
 				dev.off()
 				
-				png(paste0('../figures_paper/interestingByPos_',x$model@mod_name,'.png'),height=400,width=800)
+				png(paste0('./figures/interestingByPos_',x$model@mod_desc,'.png'),height=400,width=800)
 				outlyingGenes(x$dataset)
 				dev.off()
 			}
-			)
+)
